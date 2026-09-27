@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Tool Pro Studio - Peerapat Thongramun</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-sidebar: #ffffff;
+            --bg-workspace: #121212;
+            --border-color: #e2e8f0;
+            --text-main: #1e293b;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-workspace);
+            color: var(--text-main);
+        }
+
+        /* --- Sidebar (Control Panel) --- */
+        .sidebar {
+            width: 360px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: var(--transition);
+            z-index: 20;
+            flex-shrink: 0;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+        }
+
+        .sidebar.hidden {
+            transform: translateX(-100%);
+            width: 0;
+            overflow: hidden;
+            border: none;
+        }
+
+        .sidebar-header {
+            padding: 16px 20px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-header h2 {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-actions-top {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .btn-help-mini {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+        .btn-help-mini:hover { background: rgba(255,255,255,0.3); }
+
+        .btn-close-sidebar {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+        .btn-close-sidebar:hover { background: rgb(239, 68, 68); }
+
+        .sidebar-content {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-main);
+        }
+
+        select, input[type="number"] {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            transition: var(--transition);
+            background: #fff;
+        }
+
+        select:focus, input:focus { 
+            border-color: var(--primary); 
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        .category-card {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            transition: var(--transition);
+        }
+        .category-card:hover { border-color: #cbd5e1; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+
+        .category-title {
+            font-weight: 600;
+            color: #334155;
+            font-size: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-upload-btn {
+            background: #ffffff;
+            border: 1.5px dashed #94a3b8;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #475569;
+            display: block;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .file-upload-btn:hover { 
+            background: #eff6ff; 
+            border-color: var(--primary); 
+            color: var(--primary);
+        }
+        .file-upload-btn input[type="file"] { display: none; }
+
+        .image-list {
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 130px;
+            overflow-y: auto;
+        }
+
+        .image-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #ffffff;
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .preview-thumb {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            background-size: cover;
+            background-position: center;
+            border: 1px solid #cbd5e1;
+            flex-shrink: 0;
+        }
+
+        .image-item input[type="number"] { width: 45px; padding: 4px; text-align: center; font-size: 12px; }
+        
+        .btn-remove {
+            background: #fee2e2; 
+            color: #ef4444; 
+            border: none; 
+            padding: 5px 8px;
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 11px; 
+            margin-left: auto;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        .btn-remove:hover { background: #ef4444; color: white; }
+
+        .sidebar-footer {
+            padding: 12px 15px;
+            background: #f8fafc;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+        }
+        .sidebar-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 3px;
+        }
+        .sidebar-footer a:hover { text-decoration: underline; }
+
+        /* --- Workspace --- */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: #1a1a1a;
+            background-image: radial-gradient(#333 1px, transparent 1px);
+            background-size: 24px 24px;
+            overflow: hidden;
+        }
+
+        .workspace-toolbar {
+            height: 52px;
+            background: #1e1e1e;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            gap: 10px;
+            color: white;
+            z-index: 10;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        .btn-edit-toggle {
+            background: #334155;
+            color: white;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: var(--transition);
+        }
+        .btn-edit-toggle:hover { background: #475569; }
+
+        .btn-main-download {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: var(--transition);
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+        }
+        .btn-main-download:hover { background: #059669; transform: translateY(-1px); }
+
+        .zoom-controls {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #2a2a2a;
+            padding: 3px 6px;
+            border-radius: 6px;
+        }
+
+        .zoom-btn {
+            background: transparent; color: white; border: none; width: 22px; height: 22px;
+            border-radius: 4px; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;
+            transition: var(--transition);
+        }
+        .zoom-btn:hover { background: #444; }
+        #zoomLabel { font-size: 11px; min-width: 35px; text-align: center; color: #cbd5e1; }
+
+        .paper-viewport {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        .paper-scale-wrapper {
+            transition: transform 0.15s ease-out;
+            transform-origin: top center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pages-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .paper {
+            background-color: white;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 8px;
+            padding: 24px;
+            padding-bottom: 45px;
+            position: relative;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        .photo-print-item {
+            flex: 0 0 auto !important;
+            box-sizing: border-box;
+            border: 1px dashed #cbd5e1;
+            background-color: #fff;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .photo-print-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center top;
+            display: block;
+        }
+
+        .paper-credit {
+            position: absolute;
+            bottom: 10px;
+            right: 20px;
+            font-size: 10px;
+            color: #94a3b8;
+            letter-spacing: 0.8px;
+            user-select: none;
+            pointer-events: none;
+            font-weight: 600;
+        }
+
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); display: none;
+            justify-content: center; align-items: center; z-index: 1000;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .modal-card {
+            background: white; width: 100%; max-width: 420px;
+            border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden; display: flex; flex-direction: column;
+            animation: modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-header {
+            background: #f8fafc; padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .modal-header h3 { font-size: 15px; color: var(--text-main); font-weight: 700; }
+        .modal-body {
+            padding: 20px; font-size: 13px; color: #475569; line-height: 1.6;
+            max-height: 65vh; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 14px;
+        }
+        .modal-body ol { padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+        .modal-footer {
+            padding: 14px 20px; background: #f8fafc; border-top: 1px solid var(--border-color);
+            display: flex; gap: 10px; justify-content: flex-end;
+        }
+
+        .btn-modal-action {
+            background: var(--primary); color: white; border: none;
+            padding: 9px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;
+            transition: var(--transition); font-size: 13px; width: 100%;
+        }
+        .btn-modal-action:hover { background: var(--primary-hover); }
+
+        .btn-modal-cancel {
+            background: #e2e8f0; color: #475569; border: none;
+            padding: 9px 20px; border-radius: 6px; font-weight: 600; cursor: pointer;
+            transition: var(--transition); font-size: 13px; width: 100%;
+        }
+        .btn-modal-cancel:hover { background: #cbd5e1; }
+
+        /* --- Real-time Render Loader UI --- */
+        .loader-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.88); color: white; display: none;
+            justify-content: center; align-items: center; flex-direction: column;
+            z-index: 100; padding: 20px; backdrop-filter: blur(5px);
+        }
+        .progress-box {
+            width: 320px;
+            background: #1e293b;
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); 
+            border-top: 3px solid #10b981; border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin-bottom: 14px;
+        }
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 14px 0 10px 0;
+        }
+        #progressBar {
+            width: 0%;
+            height: 100%;
+            background: #10b981;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+        #statusText {
+            font-size: 13px;
+            font-weight: 600;
+            color: #f8fafc;
+            text-align: center;
+            min-height: 20px;
+        }
+        #renderTimer {
+            font-size: 11px;
+            color: #94a3b8;
+            text-align: center;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes modalPop { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        @media print {
+            body { background: white; display: block; }
+            .sidebar, .workspace-toolbar, .modal-overlay { display: none !important; }
+            .workspace { display: block; background: none; padding: 0; overflow: visible; }
+            .paper-viewport { padding: 0; display: block; overflow: visible; }
+            .paper-scale-wrapper { transform: none !important; margin: 0; padding: 0; }
+            .pages-container { gap: 0; }
+            .paper { box-shadow: none; padding: 10px; margin: 0; page-break-after: always; }
+            .photo-print-item { border: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Control Panel -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>🛠️ จัดการรูปถ่าย Pro</h2>
+            <div class="sidebar-actions-top">
+                <button class="btn-help-mini" onclick="toggleHelpModal()">📖 คู่มือ</button>
+                <button class="btn-close-sidebar" onclick="toggleSidebar()">👁️ ดูรูป</button>
+            </div>
+        </div>
+        
+        <div class="sidebar-content">
+            <div class="form-group">
+                <label>1. เลือกขนาดกระดาษพิมพ์:</label>
+                <select id="paperSize" onchange="updatePaperSize()">
+                    <option value="a4">กระดาษ A4</option>
+                    <option value="4x6">กระดาษ 4x6 นิ้ว (จัมโบ้)</option>
+                    <option value="5x7">กระดาษ 5x7 นิ้ว</option>
+                </select>
+            </div>
+
+            <!-- หมวดหมู่รูปขนาด 2 นิ้ว (จัดไว้บนสุดเพื่อให้เรียงจากใหญ่ไปเล็กอัตโนมัติ) -->
+            <div class="category-card">
+                <div class="category-title">ขนาด 2 นิ้ว (4x5.5 ซม.)</div>
+                <label class="file-upload-btn">
+                    📁 อัปโหลดรูป 2 นิ้ว
+                    <input type="file" multiple accept="image/jpeg, image/png, image/webp" onchange="handleFileUpload(event, '2')">
+                </label>
+                <div class="image-list" id="list-2"></div>
+            </div>
+
+            <!-- หมวดหมู่รูปขนาด 1.5 นิ้ว -->
+            <div class="category-card">
+                <div class="category-title">ขนาด 1.5 นิ้ว (3x4 ซม.)</div>
+                <label class="file-upload-btn">
+                    📁 อัปโหลดรูป 1.5 นิ้ว
+                    <input type="file" multiple accept="image/jpeg, image/png, image/webp" onchange="handleFileUpload(event, '1.5')">
+                </label>
+                <div class="image-list" id="list-1.5"></div>
+            </div>
+
+            <!-- หมวดหมู่รูปขนาด 1 นิ้ว -->
+            <div class="category-card">
+                <div class="category-title">ขนาด 1 นิ้ว (2.5x3.5 ซม.)</div>
+                <label class="file-upload-btn">
+                    📁 อัปโหลดรูป 1 นิ้ว
+                    <input type="file" multiple accept="image/jpeg, image/png, image/webp" onchange="handleFileUpload(event, '1')">
+                </label>
+                <div class="image-list" id="list-1"></div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            พัฒนาโดย <b>Peerapat Thongramun</b><br>
+            <a href="https://www.facebook.com/share/1acK61W3Ly/" target="_blank">🌐 ติดต่อผู้พัฒนา (Facebook)</a>
+        </div>
+    </aside>
+
+    <!-- Workspace Preview -->
+    <main class="workspace">
+        <header class="workspace-toolbar">
+            <button class="btn-edit-toggle" onclick="toggleSidebar()">
+                <span>✏️ จัดการ / เพิ่มรูป</span>
+            </button>
+
+            <button class="btn-main-download" onclick="openDownloadModal()">
+                <span>📥 ดาวน์โหลดผลงาน</span>
+            </button>
+
+            <div class="zoom-controls">
+                <button class="zoom-btn" onclick="changeZoom(-0.1)">-</button>
+                <span id="zoomLabel">45%</span>
+                <button class="zoom-btn" onclick="changeZoom(0.1)">+</button>
+            </div>
+        </header>
+
+        <div class="paper-viewport" id="viewport">
+            <div class="paper-scale-wrapper" id="scaleWrapper">
+                <div class="pages-container" id="pagesContainer"></div>
+            </div>
+        </div>
+
+        <!-- Real-time Render Progress Tracker UI -->
+        <div class="loader-overlay" id="loader">
+            <div class="progress-box">
+                <div class="spinner"></div>
+                <div id="statusText">🎨 กำลังเตรียมกระดาษและจัดเรียงรูปภาพ...</div>
+                <div class="progress-bar-container">
+                    <div id="progressBar"></div>
+                </div>
+                <div id="renderTimer">⏳ เวลาที่ใช้: 0 วินาที</div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal ดาวน์โหลด -->
+    <div id="downloadModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>📥 ตั้งค่าการดาวน์โหลดและความคมชัด</h3>
+                <button onclick="closeDownloadModal()" style="background:none; border:none; font-size:16px; cursor:pointer; color:#64748b;">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>ระดับความคมชัด (Resolution):</label>
+                    <select id="exportQuality">
+                        <option value="1">มาตรฐาน (1x)</option>
+                        <option value="2">คมชัดสูง (HD - 2x)</option>
+                        <option value="4">คมชัดพิเศษ (4K Ultra)</option>
+                        <option value="8" selected>ความชัดสูงสุด (8K Masterpiece)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ชนิดไฟล์ผลลัพธ์:</label>
+                    <select id="exportFormat">
+                        <option value="pdf">เอกสาร PDF (ทุกหน้าต่อเนื่อง)</option>
+                        <option value="jpg">รูปภาพความละเอียดสูง (JPG)</option>
+                        <option value="print">พิมพ์ผ่านเครื่องพิมพ์โดยตรง (Print)</option>
+                    </select>
+                </div>
+                <div style="font-size: 11px; color: #64748b; background: #f8fafc; padding: 8px; border-radius: 6px;">
+                    * ไฟล์ที่ดาวน์โหลดจะถูกตั้งชื่ออัตโนมัติพร้อมระบบรันเลขเครดิต <b>Peerapat_XXX</b> รองรับหลายหน้ากระดาษรวดเดียวจบ
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-cancel" onclick="closeDownloadModal()">ยกเลิก</button>
+                <button class="btn-modal-action" onclick="executeExport()">เริ่มดาวน์โหลด</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal คู่มือ -->
+    <div id="helpModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>📖 คู่มือและวิธีการใช้งานระบบ</h3>
+                <button onclick="toggleHelpModal()" style="background:none; border:none; font-size:16px; cursor:pointer; color:#64748b;">✕</button>
+            </div>
+            <div class="modal-body">
+                <ol>
+                    <li><b>เลือกขนาดกระดาษ:</b> เลือกประเภทกระดาษที่ต้องการ (A4, 4x6 หรือ 5x7 นิ้ว)</li>
+                    <li><b>อัปโหลดรูปภาพ:</b> ระบบจะจัดเรียงขนาดจากใหญ่ไปเล็ก (2 นิ้ว ➔ 1.5 นิ้ว ➔ 1 นิ้ว) อัตโนมัติ</li>
+                    <li><b>ระบบเพิ่มหน้าอัตโนมัติ:</b> หากรูปเต็มหน้ากระดาษ ระบบจะสร้างหน้ากระดาษใหม่เพิ่มให้อย่างต่อเนื่องโดยไม่จำกัด</li>
+                    <li><b>ดูรูปพรีวิว:</b> กดปุ่ม <b>"👁️ ดูรูป"</b> ที่มุมบนขวา เพื่อซ่อนเมนูและตรวจสอบหน้ากระดาษทั้งหมด</li>
+                    <li><b>ดาวน์โหลดงาน:</b> คลิกปุ่ม <b>"ดาวน์โหลดผลงาน"</b> เพื่อบันทึกไฟล์ PDF หรือภาพรวมทุกหน้าได้ทันที</li>
+                </ol>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal-action" onclick="toggleHelpModal()">เข้าใจแล้ว</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const scalePx = 4;
+        const paperDimensions = {
+            'a4': { w: 210 * scalePx, h: 297 * scalePx, mmW: 210, mmH: 297 },
+            '4x6': { w: 101.6 * scalePx, h: 152.4 * scalePx, mmW: 101.6, mmH: 152.4 },
+            '5x7': { w: 127 * scalePx, h: 177.8 * scalePx, mmW: 127, mmH: 177.8 }
+        };
+
+        const photoDimensions = {
+            '1': { w: 25 * scalePx, h: 35 * scalePx },     
+            '1.5': { w: 30 * scalePx, h: 40 * scalePx },   
+            '2': { w: 40 * scalePx, h: 55 * scalePx }      
+        };
+
+        const store = { '1': [], '1.5': [], '2': [] };
+        let currentZoom = 0.45;
+        let fileCounter = parseInt(localStorage.getItem('peerapat_file_counter')) || 1;
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        }
+
+        function toggleHelpModal() {
+            const modal = document.getElementById('helpModal');
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function openDownloadModal() {
+            document.getElementById('downloadModal').style.display = 'flex';
+        }
+
+        function closeDownloadModal() {
+            document.getElementById('downloadModal').style.display = 'none';
+        }
+
+        function changeZoom(delta) {
+            currentZoom += delta;
+            if(currentZoom < 0.2) currentZoom = 0.2;
+            if(currentZoom > 3.0) currentZoom = 3.0;
+            
+            document.getElementById('scaleWrapper').style.transform = `scale(${currentZoom})`;
+            document.getElementById('zoomLabel').innerText = Math.round(currentZoom * 100) + '%';
+        }
+
+        function updatePaperSize() {
+            const paperType = document.getElementById('paperSize').value;
+            if(paperType === 'a4') currentZoom = 0.45;
+            else currentZoom = 0.65;
+            changeZoom(0);
+            renderPaper();
+        }
+
+        function handleFileUpload(event, category) {
+            const files = event.target.files;
+            if (!files.length) return;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const newItem = {
+                        id: Date.now() + Math.random().toString(36).substr(2, 9),
+                        src: e.target.result,
+                        count: 1
+                    };
+                    store[category].push(newItem);
+                    renderSidebarCategory(category);
+                    renderPaper();
+                };
+                reader.readAsDataURL(file);
+            });
+            event.target.value = '';
+        }
+
+        function renderSidebarCategory(category) {
+            const container = document.getElementById(`list-${category}`);
+            container.innerHTML = '';
+
+            store[category].forEach((item) => {
+                const div = document.createElement('div');
+                div.className = 'image-item';
+                div.innerHTML = `
+                    <div class="preview-thumb" style="background-image: url('${item.src}')"></div>
+                    <div style="font-size:11px; font-weight:600;">จำนวน:</div>
+                    <input type="number" min="1" value="${item.count}" onchange="updateImageCount('${category}', '${item.id}', this.value)">
+                    <button class="btn-remove" onclick="removeImage('${category}', '${item.id}')">ลบ</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateImageCount(category, id, value) {
+            const count = parseInt(value) || 1;
+            const item = store[category].find(img => img.id === id);
+            if (item) {
+                item.count = count;
+                renderPaper();
+            }
+        }
+
+        function removeImage(category, id) {
+            store[category] = store[category].filter(img => img.id !== id);
+            renderSidebarCategory(category);
+            renderPaper();
+        }
+
+        function createNewPage(container, dim) {
+            const page = document.createElement('div');
+            page.className = 'paper';
+            page.style.width = dim.w + 'px';
+            page.style.height = dim.h + 'px';
+            
+            const creditEl = document.createElement('div');
+            creditEl.className = 'paper-credit';
+            creditEl.innerText = '© Peerapat Thongramun - Protected Asset';
+            page.appendChild(creditEl);
+
+            container.appendChild(page);
+            return page;
+        }
+
+        function renderPaper() {
+            const container = document.getElementById('pagesContainer');
+            container.innerHTML = '';
+            const paperType = document.getElementById('paperSize').value;
+            const dim = paperDimensions[paperType];
+
+            // เรียงลำดับจากขนาดใหญ่ไปเล็กอัตโนมัติ: '2' (2 นิ้ว) -> '1.5' (1.5 นิ้ว) -> '1' (1 นิ้ว)
+            const sortedCategories = ['2', '1.5', '1'];
+            const allPhotoConfigs = [];
+
+            sortedCategories.forEach(cat => {
+                store[cat].forEach(item => {
+                    for (let i = 0; i < item.count; i++) {
+                        allPhotoConfigs.push({ category: cat, src: item.src });
+                    }
+                });
+            });
+
+            if (allPhotoConfigs.length === 0) {
+                createNewPage(container, dim);
+                return;
+            }
+
+            let currentPage = createNewPage(container, dim);
+
+            allPhotoConfigs.forEach(config => {
+                const pDim = photoDimensions[config.category];
+                const imgBox = document.createElement('div');
+                imgBox.className = 'photo-print-item';
+                imgBox.style.width = pDim.w + 'px';
+                imgBox.style.height = pDim.h + 'px';
+
+                const img = document.createElement('img');
+                img.src = config.src;
+                imgBox.appendChild(img);
+
+                currentPage.appendChild(imgBox);
+
+                // ถ้ารูปเต็มหน้ากระดาษ ให้สร้างหน้าใหม่เพิ่มอัตโนมัติทันที
+                if (currentPage.scrollHeight > currentPage.clientHeight) {
+                    currentPage.removeChild(imgBox);
+                    currentPage = createNewPage(container, dim);
+                    currentPage.appendChild(imgBox);
+                }
+            });
+        }
+
+        async function executeExport() {
+            closeDownloadModal();
+            const format = document.getElementById('exportFormat').value;
+            const qualityScale = parseInt(document.getElementById('exportQuality').value) || 2;
+
+            if (format === 'print') {
+                window.print();
+                return;
+            }
+
+            const loader = document.getElementById('loader');
+            const progressBar = document.getElementById('progressBar');
+            const statusText = document.getElementById('statusText');
+            const timerDisplay = document.getElementById('renderTimer');
+            const scaleWrapper = document.getElementById('scaleWrapper');
+            const pages = document.querySelectorAll('.paper');
+            const printItems = document.querySelectorAll('.photo-print-item');
+            
+            // เริ่มต้นเปิดระบบ Loader และตั้งค่าเริ่มต้น
+            loader.style.display = 'flex';
+            progressBar.style.width = '10%';
+            statusText.innerText = "🎨 กำลังเตรียมกระดาษและจัดระเบียบรูปภาพ...";
+            
+            let startTime = Date.now();
+            let timerInterval = setInterval(() => {
+                let elapsed = Math.floor((Date.now() - startTime) / 1000);
+                timerDisplay.innerText = `⏳ เวลาที่ใช้: ${elapsed} วินาที`;
+            }, 1000);
+
+            const tempZoom = currentZoom;
+            scaleWrapper.style.transform = `scale(1)`;
+            printItems.forEach(item => item.style.border = 'none');
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 300)); 
+
+                progressBar.style.width = '30%';
+                statusText.innerText = `⚡ กำลังเรนเดอร์กราฟิกความละเอียดสูง (ระดับ ${qualityScale === 8 ? '8K Masterpiece' : qualityScale + 'x'})...`;
+
+                const fileNumberStr = String(fileCounter).padStart(3, '0');
+                const customFileName = `Peerapat_${fileNumberStr}`;
+
+                if (format === 'jpg') {
+                    progressBar.style.width = '60%';
+                    statusText.innerText = "📦 กำลังรวมภาพทุกหน้าเข้าด้วยกันเป็นไฟล์เดี่ยว...";
+                    
+                    const container = document.getElementById('pagesContainer');
+                    const canvas = await html2canvas(container, {
+                        scale: qualityScale,
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#ffffff'
+                    });
+
+                    progressBar.style.width = '85%';
+                    statusText.innerText = "💾 กำลังสร้างไฟล์รูปภาพ JPG...";
+                    
+                    const link = document.createElement('a');
+                    link.download = `${customFileName}.jpg`;
+                    link.href = canvas.toDataURL('image/jpeg', 0.98);
+                    link.click();
+                } 
+                else if (format === 'pdf') {
+                    const { jsPDF } = window.jspdf;
+                    const paperType = document.getElementById('paperSize').value;
+                    const dim = paperDimensions[paperType];
+
+                    const pdf = new jsPDF({
+                        orientation: dim.mmW > dim.mmH ? 'l' : 'p',
+                        unit: 'mm',
+                        format: [dim.mmW, dim.mmH]
+                    });
+
+                    for (let i = 0; i < pages.length; i++) {
+                        let calcProgress = 30 + Math.floor(((i + 1) / pages.length) * 50);
+                        progressBar.style.width = calcProgress + '%';
+                        statusText.innerText = `📄 กำลังประมวลผลหน้ากระดาษที่ ${i + 1} จาก ${pages.length}...`;
+
+                        if (i > 0) pdf.addPage([dim.mmW, dim.mmH], dim.mmW > dim.mmH ? 'l' : 'p');
+                        const canvas = await html2canvas(pages[i], {
+                            scale: qualityScale,
+                            useCORS: true,
+                            logging: false,
+                            backgroundColor: '#ffffff'
+                        });
+                        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                        pdf.addImage(imgData, 'JPEG', 0, 0, dim.mmW, dim.mmH);
+                    }
+
+                    progressBar.style.width = '90%';
+                    statusText.innerText = "💾 กำลังรวบรวมหน้าเอกสารเป็นไฟล์ PDF...";
+                    pdf.save(`${customFileName}.pdf`);
+                }
+
+                progressBar.style.width = '100%';
+                statusText.innerText = "🎉 ดาวน์โหลดผลงานสำเร็จเรียบร้อยแล้วครับ!";
+                await new Promise(resolve => setTimeout(resolve, 600));
+
+                fileCounter++;
+                localStorage.setItem('peerapat_file_counter', fileCounter);
+
+            } catch (err) {
+                alert('เกิดข้อผิดพลาดในการส่งออกไฟล์: ' + err.message);
+            } finally {
+                clearInterval(timerInterval);
+                printItems.forEach(item => item.style.border = '1px dashed #cbd5e1');
+                scaleWrapper.style.transform = `scale(${tempZoom})`;
+                loader.style.display = 'none';
+            }
+        }
+
+        updatePaperSize();
+    </script>
+</body>
+</html>
