@@ -9,6 +9,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     
+    <!-- Vercel Web Analytics -->
+    <script>
+        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    
     <style>
         :root {
             --primary: #2563eb;
@@ -796,7 +802,7 @@
                 <ol>
                     <li><b>สำหรับมือถือ:</b> สามารถใช้นิ้ว 2 นิ้ว ถ่างเข้า-ออก (Pinch-to-Zoom) บริเวณหน้ากระดาษเพื่อซูมดูรูปได้อย่างอิสระ</li>
                     <li><b>สำหรับคอมพิวเตอร์:</b> กดปุ่ม <code>Ctrl</code> ค้างไว้ พร้อมกับเลื่อนลูกกลิ้งเมาส์ (Scroll Wheel) เพื่อซูมเข้าออกแบบรวดเร็ว</li>
-                    <li>หากต้องการขยับรูปภายในกรอบ ให้กดปุ่ม <b>"⚙️ จัดตำแหน่ง"</b> ที่แถบเมนูด้านซ้าย</li>
+                    <li>หากต้องการขยับรูป���ายในกรอบ ให้กดปุ่ม <b>"⚙️ จัดตำแหน่ง"</b> ที่แถบเมนูด้านซ้าย</li>
                 </ol>
 
                 <div style="text-align: center; margin-top: 10px;">
@@ -1147,7 +1153,7 @@
                     for (let i = 0; i < pages.length; i++) {
                         let calcProgress = 30 + Math.floor(((i + 1) / pages.length) * 50);
                         progressBar.style.width = calcProgress + '%';
-                        statusText.innerText = `📄 กำลังประมวลผลหน้ากระดาษที่ ${i + 1} จาก ${pages.length}...`;
+                        statusText.innerText = `📄 กำลัง��ระมวลผลหน้ากระดาษที่ ${i + 1} จาก ${pages.length}...`;
 
                         if (i > 0) pdf.addPage([dim.mmW, dim.mmH], dim.mmW > dim.mmH ? 'l' : 'p');
                         const canvas = await html2canvas(pages[i], {
